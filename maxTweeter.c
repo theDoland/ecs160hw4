@@ -1,5 +1,5 @@
 #include "hashTable.h"
-
+#include "list.h"
 /* Calculate the top 10 tweeters by volume of tweets in a given csv file 
  * Tweeters will be printed in descending order
  */
@@ -10,7 +10,7 @@ void main(int argc, char *argv[]){
     // hash table where (key, value) = (tweeter, count)
     HashTable* ht = newHashTable();
     const char* nameArr[MAX_TWEETER_SIZE];
-    Tweeter topTweeters[10];
+    Tweeter* countArr[10];
     int nameArrIndex = 0; 
     // no file provided
     if(argv[1] == NULL){
@@ -61,7 +61,7 @@ void main(int argc, char *argv[]){
             // add it to the hashTable
             insertTweeter(ht,token);
             // add name to list of names for later consumption
-            nameArr[nameArrIndex++] = token;
+            nameArr[nameArrIndex++] = strdup(token);
         }
         else{
             // increment the count
@@ -75,21 +75,53 @@ void main(int argc, char *argv[]){
     // Close the file
     fclose(fstream);
 
+    //
+    node* head = NULL;
+    node* temp = NULL;
 
-    exit(0);
     // For each tweeter in the string array
+    int countIndex;
+    int arrCount = 0;
     for(int i = 0; i < sizeof(nameArr); i++){
         // Check if it has a place in the topTweeters and sort
-        for(int j = 0; j < sizeof(topTweeters); j++){
+        hashIndex = getTweeter(ht, nameArr[i]);
+        for(countIndex = 0; countIndex < arrCount; countIndex++){
+            if(ht->tweets[hashIndex]->count > countArr[countIndex]->count){                
+                // array cannot fit anymore data
+                if(arrCount == 9){
+                    // remove the last data point and shift everything over
+                    for(int j = arrCount; j == countIndex; j--){
+                        countArr[j] = countArr[j-1]; 
+                    }
+                    countArr[countIndex] = ht->tweets[hashIndex];
+                }
+                // array fits data, move the elements in array around
+                else{
+                    // move each element starting from the back until you hit the index
+                    for(int j = arrCount; j == countIndex; j--){
+                        countArr[j+1] = countArr[j];
+                    }
+                    // place the data in the now available index
+                    countArr[countIndex] = ht->tweets[hashIndex];
+                    arrCount++;
+                }
 
+            }
+        }
+        // append to the arr if lowest value and array size is less than 10
+        if(countArr[countIndex] == NULL && arrCount < 10){
+            countArr[countIndex] = ht->tweets[hashIndex];
+            arrCount++;
         }
     }
-    // TODO:
-    // Check the hashtable for a count
-    // (?) loop through count array to check where to place the tweeter
-    // if tweeter's count > lowest tweeter || array length < 10
-    // add to the final array
 
     // print out the results
+    for(int i = 0; i < sizeof(countArr); i++){
+        printf("%s: %i", countArr[i]->tweetname, countArr[i]->count);
+    }
+
     // free data
+    deleteHashTable(ht);
+    //free(nameArr);
+    //free(countArr);
 }
