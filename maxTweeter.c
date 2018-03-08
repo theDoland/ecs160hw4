@@ -4,19 +4,13 @@
  * Tweeters will be printed in descending order
  */
 
-/*
- * Check if there's even a file loaded
- * 
- * 
- * 
- */
-
-// takes one cmd line argument
+// takes one cmd line argument (filename)
 void main(int argc, char *argv[]){
     // Store the tweeters/count and collect at end 
-    // Probably a hash table where (key, value) = (tweeter, count)
+    // hash table where (key, value) = (tweeter, count)
     HashTable* ht = newHashTable();
     const char* nameArr[MAX_TWEETER_SIZE];
+    Tweeter topTweeters[10];
     int nameArrIndex = 0; 
     // no file provided
     if(argv[1] == NULL){
@@ -71,7 +65,7 @@ void main(int argc, char *argv[]){
         }
         else{
             // increment the count
-            ht->tweets[hashIndex] += 1;
+            ht->tweets[hashIndex]->count += 1;
         }
         if(tmp != NULL){
             free(tmp);
@@ -81,15 +75,21 @@ void main(int argc, char *argv[]){
     // Close the file
     fclose(fstream);
 
+
+    exit(0);
     // For each tweeter in the string array
     for(int i = 0; i < sizeof(nameArr); i++){
+        // Check if it has a place in the topTweeters and sort
+        for(int j = 0; j < sizeof(topTweeters); j++){
 
+        }
     }
+    // TODO:
     // Check the hashtable for a count
     // (?) loop through count array to check where to place the tweeter
     // if tweeter's count > lowest tweeter || array length < 10
     // add to the final array
 
     // print out the results
-    // (?) free data
+    // free data
 }

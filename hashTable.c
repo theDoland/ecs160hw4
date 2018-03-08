@@ -75,7 +75,7 @@ void insertTweeter(HashTable* ht, const char *tweetName) {
 int getTweeter(HashTable* ht, const char *tweetName) {
     int collisions = 0;
     int index = hash(tweetName, collisions);
-    Tweeter* temp = ht->tweets[index];
+    Tweeter *temp = ht->tweets[index];
     while(temp != NULL){
         // if you find the same tweeter name
         if(strcmp(temp->tweetname,tweetName) == 0){
