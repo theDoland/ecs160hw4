@@ -1,123 +1,50 @@
 #include "hashTable.h"
-#include "list.h"
+#include "processData.h"
+
 /* Calculate the top 10 tweeters by volume of tweets in a given csv file 
  * Tweeters will be printed in descending order
+ * Store the tweeters/count and collect at end 
  */
 
-// takes one cmd line argument (filename)
 void main(int argc, char *argv[]){
-    // Store the tweeters/count and collect at end 
-    // hash table where (key, value) = (tweeter, count)
-    HashTable* ht = newHashTable();
-    const char* nameArr[MAX_TWEETER_SIZE];
-    Tweeter* countArr[10];
-    int nameArrIndex = 0; 
+
+    HashTable* ht = newHashTable();             // set up the hashTable
+    const char* nameArr[MAX_TWEETER_SIZE];      // nameArray for later consumption
+    Tweeter* countArr[TOP_TWEET_SIZE];          // final count array for later consumption
+
     // no file provided
     if(argv[1] == NULL){
         printf("No file provided!\n");
         exit(0);
     }
+
     // Open the file for reading
     FILE* fstream = fopen(argv[1], "r");
 
-    // unsure about this part
     char line[1024];
-    // get header line to find the name
     fgets(line, 1024, fstream);
     char* token = strtok(line, ",");
-    int nameIndex = -1;
-    int tempIndex = 0;
 
-    // check the file header for the "name" category
-    while(token != NULL){
-        if(strcmp(token, "\"name\"") == 0){
-            nameIndex = tempIndex;
-            break;
-        }
-        token = strtok(NULL, ",");
-        tempIndex++;
-    }
+    // get the index for where the "name" field is in file
+    int nameIndex = getNameIndex(token);
 
     // name does not exist in the file
     if(nameIndex == -1){
         printf("No name field in file!\n");
         exit(0);
     }
-    int hashIndex;
-    // now loop through entire file to find the names and increment count
-    while(fgets(line, 1024, fstream)){
-        char *tmp = strdup(line);
 
-        // skip to the name field in the line
-        token = strtok(tmp, ",");
-        for(int i = 0; i < nameIndex; i++){
-            token = strtok(NULL, ",");
-        }
-
-        hashIndex = getTweeter(ht,token);
-        // if the hashtable does not have the name
-        if(hashIndex == -1){
-            // add it to the hashTable
-            insertTweeter(ht,token);
-            // add name to list of names for later consumption
-            nameArr[nameArrIndex++] = strdup(token);
-        }
-        else{
-            // increment the count
-            ht->tweets[hashIndex]->count += 1;
-        }
-        if(tmp != NULL){
-            free(tmp);
-        }
-    }
+    // now loop through entire file to fill hash table with names and count
+    processFile(line, ht, nameArr, fstream, nameIndex);
 
     // Close the file
     fclose(fstream);
 
-    //
-    node* head = NULL;
-    node* temp = NULL;
-
-    // For each tweeter in the string array
-    int countIndex;
-    int arrCount = 0;
-    for(int i = 0; nameArr[i] != NULL; i++){
-        // Check if it has a place in the topTweeters and sort
-        hashIndex = getTweeter(ht, nameArr[i]);
-        for(countIndex = 0; countIndex < arrCount; countIndex++){
-            if(ht->tweets[hashIndex]->count > countArr[countIndex]->count){                
-                // array cannot fit anymore data
-                if(arrCount == 10){
-                    // remove the last data point and shift everything over
-                    for(int j = arrCount; j != countIndex; j--){
-                        countArr[j] = countArr[j-1]; 
-                    }
-                    countArr[countIndex] = ht->tweets[hashIndex];
-                    break;
-                }
-                // array fits data, move the elements in array around
-                else{
-                    // move each element starting from the back until you hit the index
-                    for(int j = arrCount; j != countIndex; j--){
-                        countArr[j] = countArr[j-1];
-                    }
-                    // place the data in the now available index
-                    countArr[countIndex] = ht->tweets[hashIndex];
-                    arrCount++;
-                    break;
-                }
-
-            }
-        }
-        // append to the arr if lowest value and array size is less than 10
-        if(countArr[countIndex] == NULL && arrCount < 10){
-            countArr[countIndex] = ht->tweets[hashIndex];
-            arrCount++;
-        }
-    }
+    // Find the top ten tweeters in the hash table
+    getTopTweeters(nameArr, ht, countArr);
 
     // print out the results
-    for(int i = 0; i < arrCount; i++){
+    for(int i = 0; i < TOP_TWEET_SIZE; i++){
         printf("%s: %i\n", countArr[i]->tweetname, countArr[i]->count);
     }
 

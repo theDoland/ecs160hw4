@@ -6,6 +6,7 @@
 #include <string.h>
 
 #define MAX_TWEETER_SIZE 20000
+#define TOP_TWEET_SIZE 10
 
 typedef struct {
     char *tweetname;
