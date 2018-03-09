@@ -35,7 +35,8 @@ void shiftAndInsert(HashTable* ht,Tweeter* countArr[],int numTweeters,int countI
 void exception(char* message);
 
 
-void main(int argc, char *argv[]){
+int main(int argc, char *argv[]){
+
     // no file provided
     if(argv[1] == NULL){
         exception("No file provided!");
@@ -105,6 +106,7 @@ HashTable* newHashTable() {
     // ht->count = 0;
     // initialize entire hashtable to zeroes
     ht->tweets = calloc((size_t)ht->size, sizeof(Tweeter*));
+    return ht;
 }
 
 // Deletes each item
