@@ -53,10 +53,15 @@ int main(int argc, char *argv[]){
         exception("Invalid file!");
     }
 
-    char line[MAX_LINE_SIZE];
-    fgets(line, MAX_LINE_SIZE, fstream);
-    char* token = strtok(line, ",");
-
+    //char line[MAX_LINE_SIZE];
+    // let getline allocate lineptr and size
+    char* line;
+    size_t num_bytes = 0;
+    getline(&line, &num_bytes, fstream);
+    if(strlen(line) > MAX_LINE_SIZE){
+        exception("Line length exceeds limit!");
+    }
+    char* token = strtok(line, ",\n");
     // get the index for where the "name" field is in file
     int nameIndex = getNameIndex(token);
 
@@ -69,14 +74,17 @@ int main(int argc, char *argv[]){
     processFile(line, ht, nameArr, fstream, nameIndex);
 
     // Close the file
-    fclose(fstream);
+    if(fclose(fstream) != 0){
+        exception("Error in closing file!");
+    }
 
     // Find the top ten tweeters in the hash table
     getTopTweeters(nameArr, ht, countArr);
 
     // print out the results
     for(int i = 0; i < TOP_TWEET_SIZE; i++){
-        printf("%s: %i\n", countArr[i]->tweetname, countArr[i]->count);
+        if(countArr[i] != NULL)
+            printf("%s: %i\n", countArr[i]->tweetname, countArr[i]->count);
     }
 
     // free data
@@ -178,7 +186,6 @@ int getTweeter(HashTable* ht, const char *tweetName) {
 }
 
 int getNameIndex(char* token){
-
     int nameIndex = -1; 
     int tempIndex = 0;
 
@@ -190,27 +197,30 @@ int getNameIndex(char* token){
             break;
         }
 
-        token = strtok(NULL, ",");
+        token = strtok(NULL, ",\n");
         tempIndex++;
     }
     return nameIndex;
 }
 
 void processFile(char* line, HashTable* ht, const char* nameArr[], FILE* fstream, int nameIndex){
-
     int hashIndex, nameArrIndex = 0;
     char* token;
+    size_t num_bytes = 0;
 
     // loop through each entry and insert names
-    while(fgets(line, MAX_LINE_SIZE, fstream)){
+    while(getline(&line, &num_bytes, fstream) != -1){ 
+        if(strlen(line) > MAX_LINE_SIZE){
+            exception("Line length exceeds limit!");
+        }
         char *tmp = strdup(line);
 
         // skip to the name field in the line
-        token = strtok(tmp, ",");
+        token = strtok(tmp, ",\n");
 
         // move token to the name entry
         for(int i = 0; i < nameIndex; i++){
-            token = strtok(NULL, ",");
+            token = strtok(NULL, ",\n");
         }
 
         // get index for the tweeter
