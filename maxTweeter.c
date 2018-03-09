@@ -30,7 +30,6 @@ void main(int argc, char *argv[]){
 
     // check the file header for the "name" category
     while(token != NULL){
-        printf("%s\n", token);
         if(strcmp(token, "\"name\"") == 0){
             nameIndex = tempIndex;
             break;
@@ -82,28 +81,30 @@ void main(int argc, char *argv[]){
     // For each tweeter in the string array
     int countIndex;
     int arrCount = 0;
-    for(int i = 0; i < sizeof(nameArr); i++){
+    for(int i = 0; nameArr[i] != NULL; i++){
         // Check if it has a place in the topTweeters and sort
         hashIndex = getTweeter(ht, nameArr[i]);
         for(countIndex = 0; countIndex < arrCount; countIndex++){
             if(ht->tweets[hashIndex]->count > countArr[countIndex]->count){                
                 // array cannot fit anymore data
-                if(arrCount == 9){
+                if(arrCount == 10){
                     // remove the last data point and shift everything over
-                    for(int j = arrCount; j == countIndex; j--){
+                    for(int j = arrCount; j != countIndex; j--){
                         countArr[j] = countArr[j-1]; 
                     }
                     countArr[countIndex] = ht->tweets[hashIndex];
+                    break;
                 }
                 // array fits data, move the elements in array around
                 else{
                     // move each element starting from the back until you hit the index
-                    for(int j = arrCount; j == countIndex; j--){
-                        countArr[j+1] = countArr[j];
+                    for(int j = arrCount; j != countIndex; j--){
+                        countArr[j] = countArr[j-1];
                     }
                     // place the data in the now available index
                     countArr[countIndex] = ht->tweets[hashIndex];
                     arrCount++;
+                    break;
                 }
 
             }
@@ -116,8 +117,8 @@ void main(int argc, char *argv[]){
     }
 
     // print out the results
-    for(int i = 0; i < sizeof(countArr); i++){
-        printf("%s: %i", countArr[i]->tweetname, countArr[i]->count);
+    for(int i = 0; i < arrCount; i++){
+        printf("%s: %i\n", countArr[i]->tweetname, countArr[i]->count);
     }
 
     // free data
