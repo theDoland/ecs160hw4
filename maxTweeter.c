@@ -4,6 +4,7 @@
 
 #define MAX_TWEETER_SIZE 20000
 #define TOP_TWEET_SIZE 10
+#define MAX_LINE_SIZE 512
 
 typedef struct {
     char *tweetname;
@@ -12,7 +13,7 @@ typedef struct {
 
 typedef struct {
     int size;
-    int count;
+    // int count;
     Tweeter** tweets;
 } HashTable;
 
@@ -31,25 +32,28 @@ void processFile(char* line, HashTable* ht, const char* nameArr[], FILE* fstream
 void getTopTweeters(const char* nameArr[], HashTable* ht, Tweeter* countArr[]);
 // shifts the elements to make room to insert element
 void shiftAndInsert(HashTable* ht,Tweeter* countArr[],int numTweeters,int countIndex,int hashIndex);
+void exception(char* message);
 
 
 void main(int argc, char *argv[]){
+    // no file provided
+    if(argv[1] == NULL){
+        exception("No file provided!");
+    }
 
     HashTable* ht = newHashTable();             // set up the hashTable
     const char* nameArr[MAX_TWEETER_SIZE];      // nameArray for later consumption
     Tweeter* countArr[TOP_TWEET_SIZE];          // final count array for later consumption
 
-    // no file provided
-    if(argv[1] == NULL){
-        printf("No file provided!\n");
-        exit(1);
-    }
-
     // Open the file for reading
     FILE* fstream = fopen(argv[1], "r");
 
-    char line[1024];
-    fgets(line, 1024, fstream);
+    if(fstream == NULL) {
+        exception("Invalid file!");
+    }
+
+    char line[MAX_LINE_SIZE];
+    fgets(line, MAX_LINE_SIZE, fstream);
     char* token = strtok(line, ",");
 
     // get the index for where the "name" field is in file
@@ -57,8 +61,7 @@ void main(int argc, char *argv[]){
 
     // name does not exist in the file
     if(nameIndex == -1){
-        printf("No name field in file!\n");
-        exit(1);
+        exception("No name field in file!");
     }
 
     // now loop through entire file to fill hash table with names and count
@@ -99,7 +102,7 @@ HashTable* newHashTable() {
 
     // Maximum hashtable size is 20000
     ht->size = MAX_TWEETER_SIZE;
-    ht->count = 0;
+    // ht->count = 0;
     // initialize entire hashtable to zeroes
     ht->tweets = calloc((size_t)ht->size, sizeof(Tweeter*));
 }
@@ -149,7 +152,7 @@ void insertTweeter(HashTable* ht, const char *tweetName) {
 
     // place the item in the hash and increment hashtable count
     ht->tweets[index] = item;
-    ht->count++;
+    // ht->count++;
 
 }
 
@@ -197,7 +200,7 @@ void processFile(char* line, HashTable* ht, const char* nameArr[], FILE* fstream
     char* token;
 
     // loop through each entry and insert names
-    while(fgets(line, 1024, fstream)){
+    while(fgets(line, MAX_LINE_SIZE, fstream)){
         char *tmp = strdup(line);
 
         // skip to the name field in the line
@@ -269,4 +272,9 @@ void shiftAndInsert(HashTable* ht, Tweeter* countArr[], int numTweeters, int cou
     }
     // place the data in the now available index
     countArr[countIndex] = ht->tweets[hashIndex];
+}
+
+void exception(char* message) {
+    printf("%s\n", message);
+    exit(1);
 }
