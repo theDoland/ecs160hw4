@@ -37,6 +37,8 @@ void shiftAndInsert(HashTable* ht,Tweeter* countArr[],int numTweeters,int countI
 void exception(char* message);
 char *trimWhitespace(char *str);
 
+// global filesize to check maximum lines
+int fileSize = 0;
 
 int main(int argc, char *argv[]){
 
@@ -46,8 +48,8 @@ int main(int argc, char *argv[]){
     }
 
     HashTable* ht = newHashTable();             // set up the hashTable
-    const char* nameArr[MAX_TWEETS];      // nameArray for later consumption
-    Tweeter* countArr[MAX_NUM_TOP_TWEETS];          // final count array for later consumption
+    const char* nameArr[MAX_TWEETS];            // nameArray for later consumption
+    Tweeter* countArr[MAX_NUM_TOP_TWEETS];      // final count array for later consumption
 
     // Open the file for reading
     FILE* fstream = fopen(argv[1], "r");
@@ -60,7 +62,10 @@ int main(int argc, char *argv[]){
     // let getline allocate lineptr and size
     char* line;
     size_t num_bytes = 0;
-    getline(&line, &num_bytes, fstream);
+    if(getline(&line, &num_bytes, fstream) != -1){
+        fileSize += 1;
+    }
+
     if(strlen(line) > MAX_LINE_SIZE){
         exception("Line length exceeds limit!");
     }
@@ -214,7 +219,12 @@ void processFile(HashTable* ht, const char* nameArr[], FILE* fstream, int nameIn
     size_t num_bytes = 0;
 
     // loop through each entry and insert names
-    while(getline(&line, &num_bytes, fstream) != -1){ 
+    while(getline(&line, &num_bytes, fstream) != -1){
+        fileSize += 1;
+        if(fileSize >= MAX_TWEETS){
+            exception("CSV length surpassed max size!");
+        }
+        
         if(strlen(line) > MAX_LINE_SIZE){
             exception("Line length exceeds limit!");
         }
