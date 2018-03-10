@@ -79,9 +79,20 @@ int main() {
     test("../a.out single-column.csv", "\"JetBlueNews\": 2\n\"mrshossruns\": 1\n");
 
     // @Todo Check with windows line endings!
-    // CSV with null characters?
+
+    // CSV with null characters? seems like it just sees them as strings
+    char* expected = "\"\0\": 1\n"
+                     "\0: 1\n"
+                     "NULL: 1\n"
+                     "\"NULL\": 1\n";
+
+    test("../a.out nullchar.csv", expected);
+
     // blank lines in csv
+    //test("../a.out emptylines.csv", "") empty lines work just fine
+
     // test max length csv
+    test("../a.out toomanylines.csv", "CSV length surpassed max size!\n");
 
     // Successful run
     char *expected = "\"JetBlueNews\": 63\n"
