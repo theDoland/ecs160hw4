@@ -74,6 +74,15 @@ int main() {
     system("rm -f long.csv");
     free(longline);
 
+    test("../a.out tweets-bad-line.csv", "Invalid line!\n");
+
+    test("../a.out single-column.csv", "\"JetBlueNews\": 2\n\"mrshossruns\": 1\n");
+
+    // @Todo Check with windows line endings!
+    // CSV with null characters?
+    // blank lines in csv
+    // test max length csv
+
     // Successful run
     char *expected = "\"JetBlueNews\": 63\n"
                     "\"otisday\": 28\n"

@@ -1,9 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
-#define MAX_TWEETER_SIZE 20000
-#define TOP_TWEET_SIZE 10
+#define HASHTABLE_SIZE 25000
+#define MAX_TWEETS 20000
+#define MAX_NUM_TOP_TWEETS 10
 #define MAX_LINE_SIZE 512
 
 typedef struct {
@@ -13,7 +15,7 @@ typedef struct {
 
 typedef struct {
     int size;
-    // int count;
+    int count;
     Tweeter** tweets;
 } HashTable;
 
@@ -27,12 +29,13 @@ int getTweeter(HashTable* ht, const char *tweetName);
 // gets the index of name field in the file
 int getNameIndex(char* token);
 // goes through the file and maps names to count
-void processFile(char* line, HashTable* ht, const char* nameArr[], FILE* fstream, int nameIndex);
+void processFile(HashTable* ht, const char* nameArr[], FILE* fstream, int nameIndex);
 // gets the top ten tweeters
 void getTopTweeters(const char* nameArr[], HashTable* ht, Tweeter* countArr[]);
 // shifts the elements to make room to insert element
 void shiftAndInsert(HashTable* ht,Tweeter* countArr[],int numTweeters,int countIndex,int hashIndex);
 void exception(char* message);
+char *trimWhitespace(char *str);
 
 
 int main(int argc, char *argv[]){
@@ -43,8 +46,8 @@ int main(int argc, char *argv[]){
     }
 
     HashTable* ht = newHashTable();             // set up the hashTable
-    const char* nameArr[MAX_TWEETER_SIZE];      // nameArray for later consumption
-    Tweeter* countArr[TOP_TWEET_SIZE];          // final count array for later consumption
+    const char* nameArr[MAX_TWEETS];      // nameArray for later consumption
+    Tweeter* countArr[MAX_NUM_TOP_TWEETS];          // final count array for later consumption
 
     // Open the file for reading
     FILE* fstream = fopen(argv[1], "r");
@@ -71,7 +74,7 @@ int main(int argc, char *argv[]){
     }
 
     // now loop through entire file to fill hash table with names and count
-    processFile(line, ht, nameArr, fstream, nameIndex);
+    processFile(ht, nameArr, fstream, nameIndex);
 
     // Close the file
     if(fclose(fstream) != 0){
@@ -82,7 +85,7 @@ int main(int argc, char *argv[]){
     getTopTweeters(nameArr, ht, countArr);
 
     // print out the results
-    for(int i = 0; i < TOP_TWEET_SIZE; i++){
+    for(int i = 0; i < MAX_NUM_TOP_TWEETS; i++){
         if(countArr[i] != NULL)
             printf("%s: %i\n", countArr[i]->tweetname, countArr[i]->count);
     }
@@ -109,9 +112,8 @@ static Tweeter* newTweeter(const char *tweetName){
 HashTable* newHashTable() {
     HashTable* ht = malloc(sizeof(HashTable));
 
-    // Maximum hashtable size is 20000
-    ht->size = MAX_TWEETER_SIZE;
-    // ht->count = 0;
+    ht->size = HASHTABLE_SIZE;
+    ht->count = 0;
     // initialize entire hashtable to zeroes
     ht->tweets = calloc((size_t)ht->size, sizeof(Tweeter*));
     return ht;
@@ -144,11 +146,14 @@ static int hash(const char *tweetName, int collisions){
         hash += (int)tweetName[i];
     }
     // placeholder hash function
-    return (hash + collisions) % 20000;
+    return (hash + collisions) % HASHTABLE_SIZE;
 }
 
 // Insert the object at hash location + # of collisions
 void insertTweeter(HashTable* ht, const char *tweetName) {
+    if(ht->count >= MAX_TWEETS) {
+        exception("CSV length surpassed max size!");
+    }
     Tweeter* item = newTweeter(tweetName);
     int collisions = 0;
     int index = hash(item->tweetname, collisions);
@@ -162,8 +167,7 @@ void insertTweeter(HashTable* ht, const char *tweetName) {
 
     // place the item in the hash and increment hashtable count
     ht->tweets[index] = item;
-    // ht->count++;
-
+    ht->count++;
 }
 
 // Return the index of the hashTable so we can increment the count
@@ -203,7 +207,8 @@ int getNameIndex(char* token){
     return nameIndex;
 }
 
-void processFile(char* line, HashTable* ht, const char* nameArr[], FILE* fstream, int nameIndex){
+void processFile(HashTable* ht, const char* nameArr[], FILE* fstream, int nameIndex){
+    char *line;
     int hashIndex, nameArrIndex = 0;
     char* token;
     size_t num_bytes = 0;
@@ -213,14 +218,25 @@ void processFile(char* line, HashTable* ht, const char* nameArr[], FILE* fstream
         if(strlen(line) > MAX_LINE_SIZE){
             exception("Line length exceeds limit!");
         }
-        char *tmp = strdup(line);
 
+        char *tmp = strdup(line);
+        tmp = trimWhitespace(tmp);
+
+        // Skip blank lines
+        if (tmp[0] == '\0') {
+            continue;
+        }
         // skip to the name field in the line
         token = strtok(tmp, ",\n");
 
         // move token to the name entry
         for(int i = 0; i < nameIndex; i++){
             token = strtok(NULL, ",\n");
+        }
+
+        // If the column doesn't exist throw error
+        if(token == NULL) {
+            exception("Invalid line!");
         }
 
         // get index for the tweeter
@@ -246,33 +262,26 @@ void processFile(char* line, HashTable* ht, const char* nameArr[], FILE* fstream
 void getTopTweeters(const char* nameArr[], HashTable* ht, Tweeter* countArr[]){
     int hashIndex;
     int countIndex;
-    int numTweeters = 0;
+    int numTopTweeters = 0;
     
     for(int i = 0; nameArr[i] != NULL; i++){
         // Check if it has a place in the topTweeters and sort
         hashIndex = getTweeter(ht, nameArr[i]);
-        for(countIndex = 0; countIndex < numTweeters; countIndex++){
-            if(ht->tweets[hashIndex]->count > countArr[countIndex]->count){                
+        for(countIndex = 0; countIndex < numTopTweeters; countIndex++){
+            if(ht->tweets[hashIndex]->count > countArr[countIndex]->count){  
+                // move elements over and insert the new element
+                shiftAndInsert(ht,countArr,numTopTweeters,countIndex,hashIndex);              
                 // array cannot fit anymore data
-                if(numTweeters == 10){
-                    // move elements over and insert the new element
-                    shiftAndInsert(ht,countArr,numTweeters,countIndex,hashIndex);
-                    break;
+                if(numTopTweeters < MAX_NUM_TOP_TWEETS){
+                    numTopTweeters++;
                 }
-                // array fits data, move the elements in array around
-                else{
-                    // move elements over and insert the new element
-                    shiftAndInsert(ht,countArr,numTweeters,countIndex,hashIndex);
-                    numTweeters++;
-                    break;
-                }
-
+                break;
             }
         }
         // append to the arr if lowest value and empty spaces in array
-        if(countArr[countIndex] == NULL && numTweeters < 10){
+        if(countArr[countIndex] == NULL && numTopTweeters < 10){
             countArr[countIndex] = ht->tweets[hashIndex];
-            numTweeters++;
+            numTopTweeters++;
         }
     }
 }
@@ -289,4 +298,26 @@ void shiftAndInsert(HashTable* ht, Tweeter* countArr[], int numTweeters, int cou
 void exception(char* message) {
     printf("%s\n", message);
     exit(1);
+}
+
+// Taken from
+// https://stackoverflow.com/questions/122616/how-do-i-trim-leading-trailing-whitespace-in-a-standard-way
+char *trimWhitespace(char *str)
+{
+  char *end;
+
+  // Trim leading space
+  while(isspace((unsigned char)*str)) str++;
+
+  if(*str == 0)  // All spaces?
+    return str;
+
+  // Trim trailing space
+  end = str + strlen(str) - 1;
+  while(end > str && isspace((unsigned char)*end)) end--;
+
+  // Write new null terminator
+  *(end+1) = 0;
+
+  return str;
 }
