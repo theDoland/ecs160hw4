@@ -1,6 +1,32 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
+
+#define N 10000
+
+
+static char* gen()
+{
+    char *dst;
+    int i, n;  
+    srand(time(NULL));               /* init seed */
+    if ((dst = malloc(N * sizeof(char))) == NULL)   /* caller will need to free this */
+    {
+        printf("Failed to generate");
+        exit(1);
+    }
+    for (i = 0; i < N; )
+    {
+        if ((n = rand() % 127) > 'A' && n < 'Z') {
+            dst[i++] = n;
+        }
+    }       
+ 
+    dst[N - 1] = '\0';                   /* null terminate the string */
+    return dst;
+}
+
 static void test(char* command, char* expected) {
 
     FILE *stream = popen(command, "r");
@@ -25,6 +51,11 @@ int main() {
     // File doesn't exist
     test("../a.out aaslkdjfalkdjflkajsdf", "Invalid file!\n");
 
+    // Empty file
+    system("touch empty.csv");
+    test("../a.out empty.csv", "No name field in file!\n");
+    system("rm -f empty.csv");
+
     // Test file without permissions
     system("touch no-access.csv");
     system("chmod 000 no-access.csv");
@@ -33,6 +64,15 @@ int main() {
 
     // Test giving it a binary file
     test("../a.out ./a.out", "No name field in file!\n");
+
+    // Long first line
+    system("touch long.csv");
+    char *longline = gen();
+    FILE* fstream = fopen("long.csv", "w");
+    fputs( longline, fstream );
+    test("../a.out long.csv", "Line length exceeds limit!\n");
+    system("rm -f long.csv");
+    free(longline);
 
     // Successful run
     char *expected = "\"JetBlueNews\": 63\n"
