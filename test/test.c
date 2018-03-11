@@ -95,7 +95,7 @@ int main() {
     test("../a.out toomanylines.csv", "CSV length surpassed max size!\n");
 
     // Successful run
-    char *expected = "\"JetBlueNews\": 63\n"
+    expected = "\"JetBlueNews\": 63\n"
                     "\"otisday\": 28\n"
                     "\"_mhertz\": 26\n"
                     "\"rossj987\": 23\n"
