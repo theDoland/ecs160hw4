@@ -150,6 +150,11 @@ static int hash(const char *tweetName, int collisions){
     for(int i = 0; i < strlen(tweetName); i++){
         hash += (int)tweetName[i];
     }
+    // if invalid characters were given
+    if(hash < 0){
+        // set to zero and essentially increment until you find an open space
+        hash = 0; 
+    }
     // placeholder hash function
     return (hash + collisions) % HASHTABLE_SIZE;
 }
@@ -224,7 +229,7 @@ void processFile(HashTable* ht, const char* nameArr[], FILE* fstream, int nameIn
         if(fileSize >= MAX_TWEETS){
             exception("CSV length surpassed max size!");
         }
-        
+
         if(strlen(line) > MAX_LINE_SIZE){
             exception("Line length exceeds limit!");
         }
@@ -263,9 +268,9 @@ void processFile(HashTable* ht, const char* nameArr[], FILE* fstream, int nameIn
             // increment the count
             ht->tweets[hashIndex]->count += 1;
         }
-        if(tmp != NULL){
-            free(tmp);
-        }
+        //if(tmp != NULL){
+        //    free(tmp);
+        //}
     }
 }
 
