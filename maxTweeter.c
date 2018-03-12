@@ -268,9 +268,6 @@ void processFile(HashTable* ht, const char* nameArr[], FILE* fstream, int nameIn
             // increment the count
             ht->tweets[hashIndex]->count += 1;
         }
-        //if(tmp != NULL){
-        //    free(tmp);
-        //}
     }
 }
 
